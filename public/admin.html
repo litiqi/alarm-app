@@ -1,0 +1,111 @@
+<!-- File: public/admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm Admin</title>
+</head>
+<body>
+    <h1>Admin - Quản lý báo thức</h1>
+
+    <!-- Form để thêm hoặc sửa báo thức -->
+    <form id="timer-form">
+        <input type="hidden" id="timer-id">
+        <label for="time">Thời gian báo:</label>
+        <input type="time" id="time" name="time" required>
+        <br>
+        <label for="song">Bản nhạc (URL):</label>
+        <input type="text" id="song" name="song" required>
+        <br>
+        <label>Nhắc lại vào các ngày:</label>
+        <br>
+        <label><input type="checkbox" value="Mon" id="Mon"> Thứ 2</label>
+        <label><input type="checkbox" value="Tue" id="Tue"> Thứ 3</label>
+        <label><input type="checkbox" value="Wed" id="Wed"> Thứ 4</label>
+        <label><input type="checkbox" value="Thu" id="Thu"> Thứ 5</label>
+        <label><input type="checkbox" value="Fri" id="Fri"> Thứ 6</label>
+        <label><input type="checkbox" value="Sat" id="Sat"> Thứ 7</label>
+        <label><input type="checkbox" value="Sun" id="Sun"> Chủ Nhật</label>
+        <br><br>
+        <button type="submit">Lưu</button>
+    </form>
+
+    <h2>Danh sách báo thức</h2>
+    <ul id="timer-list"></ul>
+
+    <script>
+        function fetchTimers() {
+            fetch('/get-all-timers')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('timer-list');
+                    list.innerHTML = '';
+                    data.forEach(timer => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            <span>${timer.time} - ${timer.song} - Lặp lại vào: ${JSON.parse(timer.repeat_days).join(', ')}</span>
+                            <button onclick="editTimer(${timer.id}, '${timer.time}', '${timer.song}', ${JSON.stringify(timer.repeat_days)})">Sửa</button>
+                            <button onclick="confirmDelete(${timer.id})">Xóa</button>
+                        `;
+                        list.appendChild(listItem);
+                    });
+                });
+        }
+
+        function editTimer(id, time, song, repeat_days) {
+            document.getElementById('timer-id').value = id;
+            document.getElementById('time').value = time;
+            document.getElementById('song').value = song;
+            JSON.parse(repeat_days).forEach(day => {
+                document.getElementById(day).checked = true;
+            });
+        }
+
+        function getSelectedDays() {
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            return days.filter(day => document.getElementById(day).checked);
+        }
+
+        function confirmDelete(id) {
+            if (confirm("Bạn có chắc chắn muốn xóa báo thức này?")) {
+                deleteTimer(id);
+            }
+        }
+
+        function deleteTimer(id) {
+            fetch(`/delete-timer/${id}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    fetchTimers();
+                });
+        }
+
+        document.getElementById('timer-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const id = document.getElementById('timer-id').value;
+            const time = document.getElementById('time').value;
+            const song = document.getElementById('song').value;
+            const repeat_days = getSelectedDays();
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `/update-timer/${id}` : '/set-timer';
+            
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ time, song, repeat_days })
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+                  document.getElementById('timer-form').reset();
+                  fetchTimers();
+              });
+        });
+
+        // Tải danh sách báo thức khi trang được tải
+        fetchTimers();
+    </script>
+</body>
+</html>
