@@ -9,7 +9,6 @@
 <body>
     <h1>Admin - Quản lý báo thức</h1>
 
-    <!-- Form để thêm hoặc sửa báo thức -->
     <form id="timer-form">
         <input type="hidden" id="timer-id">
         <label for="time">Thời gian báo:</label>
@@ -36,7 +35,7 @@
 
     <script>
         function fetchTimers() {
-            fetch('/get-all-timers')
+            fetch('/index.php/get-all-timers')
                 .then(response => response.json())
                 .then(data => {
                     const list = document.getElementById('timer-list');
@@ -74,7 +73,7 @@
         }
 
         function deleteTimer(id) {
-            fetch(`/delete-timer/${id}`, { method: 'DELETE' })
+            fetch(`/index.php/delete-timer/${id}`, { method: 'DELETE' })
                 .then(response => response.json())
                 .then(data => {
                     alert(data.message);
@@ -90,7 +89,7 @@
             const repeat_days = getSelectedDays();
 
             const method = id ? 'PUT' : 'POST';
-            const url = id ? `/update-timer/${id}` : '/set-timer';
+            const url = id ? `/index.php/update-timer/${id}` : '/index.php/set-timer';
             
             fetch(url, {
                 method: method,

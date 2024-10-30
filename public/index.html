@@ -44,7 +44,7 @@
         }
 
         function checkAlarm() {
-            fetch('/get-timer')
+            fetch('/index.php/get-timer')
                 .then(response => response.json())
                 .then(data => {
                     const currentTime = new Date().toTimeString().split(' ')[0];
@@ -76,7 +76,7 @@
             checkAlarm();
         }, 1000);
 
-        updateClockAndDate();
+        updateClockAndDate(); 
     </script>
 </body>
 </html>
