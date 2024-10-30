@@ -1,32 +1,24 @@
 <?php
-// Kết nối đến SQLite database
-$db = new PDO('sqlite:./alarm.db');
-
-// Tạo bảng nếu chưa tồn tại
-$db->exec("CREATE TABLE IF NOT EXISTS timers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    time TEXT NOT NULL,
-    song TEXT NOT NULL,
-    repeat_days TEXT NOT NULL
-)");
+// Kết nối đến MySQL thông qua file config
+require 'config/config.php';
 
 // Xử lý các request từ frontend
 $method = $_SERVER['REQUEST_METHOD'];
-$request = explode('/', trim($_SERVER['PATH_INFO'],'/'));
+$request = explode('/', trim($_SERVER['PATH_INFO'], '/'));
 
 switch ($method) {
     case 'GET':
         if ($request[0] == 'get-all-timers') {
             // Lấy tất cả báo thức
-            $result = $db->query("SELECT * FROM timers ORDER BY time ASC");
-            $timers = $result->fetchAll(PDO::FETCH_ASSOC);
+            $stmt = $pdo->query("SELECT * FROM timers ORDER BY time ASC");
+            $timers = $stmt->fetchAll(PDO::FETCH_ASSOC);
             header('Content-Type: application/json');
             echo json_encode($timers);
         } elseif ($request[0] == 'get-timer') {
             // Lấy báo thức phù hợp với ngày hiện tại
-            $result = $db->query("SELECT * FROM timers ORDER BY time ASC");
-            $timers = $result->fetchAll(PDO::FETCH_ASSOC);
-            
+            $stmt = $pdo->query("SELECT * FROM timers ORDER BY time ASC");
+            $timers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
             $todayDay = date('D'); // Lấy ngày hiện tại (Mon, Tue,...)
             $validAlarms = array_filter($timers, function($timer) use ($todayDay) {
                 $repeatDays = json_decode($timer['repeat_days']);
@@ -47,7 +39,7 @@ switch ($method) {
         if ($request[0] == 'set-timer') {
             // Thêm báo thức mới
             $data = json_decode(file_get_contents('php://input'), true);
-            $stmt = $db->prepare("INSERT INTO timers (time, song, repeat_days) VALUES (?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO timers (time, song, repeat_days) VALUES (?, ?, ?)");
             $stmt->execute([$data['time'], $data['song'], json_encode($data['repeat_days'])]);
             echo json_encode(["message" => "Lưu thành công!"]);
         }
@@ -58,7 +50,7 @@ switch ($method) {
             // Cập nhật báo thức
             $id = $request[1];
             $data = json_decode(file_get_contents('php://input'), true);
-            $stmt = $db->prepare("UPDATE timers SET time = ?, song = ?, repeat_days = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE timers SET time = ?, song = ?, repeat_days = ? WHERE id = ?");
             $stmt->execute([$data['time'], $data['song'], json_encode($data['repeat_days']), $id]);
             echo json_encode(["message" => "Cập nhật thành công!"]);
         }
@@ -68,7 +60,7 @@ switch ($method) {
         if ($request[0] == 'delete-timer' && isset($request[1])) {
             // Xóa báo thức
             $id = $request[1];
-            $stmt = $db->prepare("DELETE FROM timers WHERE id = ?");
+            $stmt = $pdo->prepare("DELETE FROM timers WHERE id = ?");
             $stmt->execute([$id]);
             echo json_encode(["message" => "Xóa thành công!"]);
         }
@@ -78,3 +70,4 @@ switch ($method) {
         header('HTTP/1.1 405 Method Not Allowed');
         break;
 }
+?>
